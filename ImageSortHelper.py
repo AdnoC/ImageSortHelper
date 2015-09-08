@@ -51,19 +51,23 @@ locationFilePath = sourceDir + os.sep + "location.txt"
 
 def main(argv):
   try:
-    opts, args = getopt.getopt(argv, "d:s:p:l:v",
-      ["dest=","source=","processed=", "locFile=", "verbose"])
+    opts, args = getopt.getopt(argv, "d:s:p:l:vkh",
+      ["dest=","source=","processed=", "locFile=", "verbose", "keepSkipped", "help"])
   except getopt.GetoptError as err:
     print(err)
     sys.exit(2)
   global destinationDir, sourceDir, processedDir, locationFilePath
   global destDirs, sourceFiles
   global index, current
-  global debug
+  global debug, keepSkipped
 
   debug = False
+  keepSkipped = False
 
   for opt, arg in opts:
+    if opt in ("-h", "--help"):
+      print(helpMessage)
+      sys.exit(1)
     if opt in ("-d", "--dest"):
       destinationDir = arg
     if opt in ("-s", "--source"):
@@ -74,6 +78,8 @@ def main(argv):
       locFile = arg
     if opt in ("-v", "--verbose"):
       debug = True
+    if opt in ("-k", "--keepSkipped"):
+      keepSkipped = True
 
   if not os.path.isdir(processedDir):
     os.makedirs(processedDir)
@@ -107,8 +113,11 @@ def main(argv):
 # If it isn't set move it to the processed images dir.
 def processFile(newName, dir=False):
   if not dir:
-    fromPath = sourceDir + os.sep + sourceFiles[index]
-    toPath = processedDir + os.sep + sourceFiles[index]
+    if not keepSkipped:
+      fromPath = sourceDir + os.sep + sourceFiles[index]
+      toPath = processedDir + os.sep + sourceFiles[index]
+    else:
+      return
   else:
     fromPath = sourceDir + os.sep + sourceFiles[index]
     toPath = destinationDir + os.sep + dir + os.sep + newName
@@ -250,5 +259,20 @@ def createNewDir(event=None):
     destDirs.append(newDir)
   getFName(newDir)
 
+helpMessage = """
+A tool to make sorting images into subfolders easier. 
+Goes through a directory, showing you each image and letting you easily move it to different folders and rename it.
+
+Arguments:
+  d, dest: The folder where all the subfolders are stored
+  s, source: The folder where the images to be sorted are stored
+  p, processed: Where to put skipped images. Does nothing if -k is passed
+  l, locFile: Where to find/put the file that keeps track of which images have been processed
+  k, keepSkipped: Flag to not move skipped images to the "Processed" folder
+  v, verbose: Turns on some debug messages
+  h, help: Prints a help message. You know this though, since you're reading it.
+
+
+"""
 if __name__ == "__main__":
   main(sys.argv[1:])
